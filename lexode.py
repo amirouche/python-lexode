@@ -26,19 +26,33 @@ _size_limits = tuple((1 << (i * 8)) - 1 for i in range(9))
 int2byte = struct.Struct(">B").pack
 
 # Define type codes:
-NULL_CODE = 0x00
 BYTES_CODE = 0x01
-STRING_CODE = 0x02
-INT_ZERO_CODE = 0x14
-POS_INT_END = 0x1D
-NEG_INT_START = 0x0B
 DOUBLE_CODE = 0x21
 FALSE_CODE = 0x26
+INT_ZERO_CODE = 0x14
+NEG_INT_START = 0x0B
+NESTED_CODE = 0x05
+NULL_CODE = 0x00
+POS_INT_END = 0x1D
+STRING_CODE = 0x02
 TRUE_CODE = 0x27
 UUID_CODE = 0x30
 
 
 # Reserved: Codes 0x03, 0x04, 0x23, and 0x24 are reserved for historical reasons.
+
+def _reduce_children(child_values):
+    version_pos = -1
+    len_so_far = 0
+    bytes_list = []
+    for child_bytes, child_pos in child_values:
+        if child_pos >= 0:
+            if version_pos >= 0:
+                raise ValueError("Multiple incomplete versionstamps included in tuple")
+            version_pos = len_so_far + child_pos
+        len_so_far += len(child_bytes)
+        bytes_list.append(child_bytes)
+    return bytes_list, version_pos
 
 
 def strinc(key):
@@ -115,6 +129,20 @@ def _decode(v, pos):
         return False, pos + 1
     elif code == TRUE_CODE:
         return True, pos + 1
+    elif code == NESTED_CODE:
+        ret = []
+        end_pos = pos + 1
+        while end_pos < len(v):
+            if v[end_pos] == 0x00:
+                if end_pos + 1 < len(v) and v[end_pos + 1] == 0xFF:
+                    ret.append(None)
+                    end_pos += 2
+                else:
+                    break
+            else:
+                val, end_pos = _decode(v, end_pos)
+                ret.append(val)
+        return tuple(ret), end_pos + 1
     else:
         raise ValueError("Unknown data type in DB: " + repr(v))
 
@@ -167,6 +195,9 @@ def _encode(value):
         return int2byte(DOUBLE_CODE) + _float_adjust(struct.pack(">d", value), True)
     elif isinstance(value, UUID):
         return int2byte(UUID_CODE) + value.bytes
+    elif isinstance(value, tuple) or isinstance(value, list):
+        child_bytes, _ = _reduce_children(map(lambda x: _encode(x, True), value))
+        return b''.join([bytes([NESTED_CODE])] + child_bytes + [bytes([0x00])])
     else:
         raise ValueError("Unsupported data type: " + str(type(value)))
 

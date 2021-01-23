@@ -9,7 +9,7 @@ def read(fname):
 
 setup(
     name="lexode",
-    version="0.1.0",
+    version="0.2.0",
     author="Amirouche Boubekki",
     author_email="amirouche@hypermove.net",
     url="https://github.com/amirouche/python-lexode",
