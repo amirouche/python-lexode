@@ -55,7 +55,7 @@ def _reduce_children(child_values):
     return bytes_list, version_pos
 
 
-def strinc(key):
+def next_prefix(key):
     key = key.rstrip(b"\xff")
     return key[:-1] + int2byte(ord(key[-1:]) + 1)
 
