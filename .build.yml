@@ -1,0 +1,64 @@
+image: ubuntu/lts
+packages:
+  # Dependencies to compile cpython
+  - build-essential
+  - curl
+  - libreadline-dev
+  - libbz2-dev
+  - libffi-dev
+  - liblzma-dev
+  - libncursesw5-dev
+  - libsqlite3-dev
+  - libssl-dev
+  - libxml2-dev
+  - libxmlsec1-dev
+  - make
+  - wget
+  - xz-utils
+  - zlib1g-dev
+
+secrets:
+  - 933b7505-48cb-4741-9040-d4f69811f77f
+
+sources:
+  - https://git.sr.ht/~amirouche/lexode
+
+tasks:
+
+  - pypy-37: |
+      wget -q https://downloads.python.org/pypy/pypy3.7-v7.3.7-linux64.tar.bz2
+      tar xf pypy3.7-v7.3.7-linux64.tar.bz2
+      cd lexode
+      PATH=$(pwd)/../pypy3.7-v7.3.7-linux64/bin/:$PATH ./ci.sh 3.7
+      rm -rf .venv 
+
+  - pypy-38: |
+      wget -q https://downloads.python.org/pypy/pypy3.8-v7.3.7-linux64.tar.bz2
+      tar xf pypy3.8-v7.3.7-linux64.tar.bz2
+      cd lexode
+      PATH=$(pwd)/../pypy3.8-v7.3.7-linux64/bin/:$PATH ./ci.sh 3.8
+      rm -rf .venv 
+
+  - cpython-37: |
+      git clone --depth=1 --branch 3.7 https://github.com/python/cpython && cd cpython && ./configure --prefix=$HOME/.local/ && make -j$(nproc) > /dev/null && make install > /dev/null && cd ../ && rm -rf  cpython
+      cd lexode
+      PATH=$HOME/.local/bin:$PATH ./ci.sh 3.7
+      rm -rf .venv
+
+  - cpython-38: |
+      git clone --depth=1 --branch 3.8 https://github.com/python/cpython && cd cpython && ./configure --prefix=$HOME/.local/ > /dev/null && make -j$(nproc) > /dev/null && make install > /dev/null && cd .. && rm -rf cpython
+      cd lexode
+      PATH=$HOME/.local/bin:$PATH ./ci.sh 3.8
+      rm -rf .venv $HOME/.local/bin
+
+  - cpython-39: |
+      git clone --depth=1 --branch 3.9 https://github.com/python/cpython && cd cpython && ./configure --prefix=$HOME/.local/ > /dev/null&& make -j$(nproc) > /dev/null && make install > /dev/null && cd .. && rm -rf cpython
+      cd lexode
+      PATH=$HOME/.local/bin:$PATH ./ci.sh 3.9
+      rm -rf .venv $HOME/.local/bin
+
+  - cpython-310: |
+      git clone --depth=1 --branch 3.10 https://github.com/python/cpython && cd cpython && ./configure --prefix=$HOME/.local/ > /dev/null && make -j$(nproc) > /dev/null && make install > /dev/null && cd .. && rm -rf cpython
+      cd lexode
+      PATH=$HOME/.local/bin:$PATH ./ci.sh 3.10
+      rm -rf .venv $HOME/.local/bin
