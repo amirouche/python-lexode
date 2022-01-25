@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lexode"
-version = "0.2.4"
+version = "0.3.0"
 description = "Lexicographic packing and unpacking"
 authors = ["Amirouche <amirouche@hyper.dev>"]
 license = "Apache"
